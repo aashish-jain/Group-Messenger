@@ -24,6 +24,9 @@ import android.util.Log;
  * @author stevko
  *
  */
+
+
+
 public class GroupMessengerProvider extends ContentProvider {
 
     @Override
@@ -50,6 +53,7 @@ public class GroupMessengerProvider extends ContentProvider {
          * internal storage option that we used in PA1. If you want to use that option, please
          * take a look at the code for PA1.
          */
+
         Log.v("insert", values.toString());
         return uri;
     }
@@ -84,3 +88,5 @@ public class GroupMessengerProvider extends ContentProvider {
         return null;
     }
 }
+
+
