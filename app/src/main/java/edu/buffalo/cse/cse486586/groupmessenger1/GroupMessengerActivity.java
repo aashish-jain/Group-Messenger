@@ -38,6 +38,8 @@ public class GroupMessengerActivity extends Activity {
          * In your implementation you need to get the message from the input box (EditText)
          * and send it to other AVDs.
          */
+        //Added from the SimpleMessengerActivity.java
+
     }
 
     @Override
