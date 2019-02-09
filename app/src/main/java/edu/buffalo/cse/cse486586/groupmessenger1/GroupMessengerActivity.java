@@ -4,6 +4,9 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
 import android.view.Menu;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 /**
@@ -38,6 +41,23 @@ public class GroupMessengerActivity extends Activity {
          * In your implementation you need to get the message from the input box (EditText)
          * and send it to other AVDs.
          */
+
+
+        final Button button = (Button) findViewById(R.id.button4);
+
+        //https://developer.android.com/reference/android/widget/Button
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                EditText editText = (EditText) findViewById(R.id.editText1);
+                TextView textView = (TextView) findViewById(R.id.textView1);
+                String msg = editText.getText().toString() + "\n";
+                editText.setText(""); // This is one way to reset the input box.
+                textView.append("\t" + msg); // This is one way to display a string.
+
+            }
+        });
+
     }
 
     @Override
