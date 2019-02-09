@@ -4,6 +4,7 @@ import android.arch.persistence.room.Dao;
 import android.arch.persistence.room.Insert;
 import android.arch.persistence.room.Query;
 
+//https://codelabs.developers.google.com/codelabs/android-room-with-a-view/#4
 @Dao
 public interface KeyValueStorageDao {
     @Insert
