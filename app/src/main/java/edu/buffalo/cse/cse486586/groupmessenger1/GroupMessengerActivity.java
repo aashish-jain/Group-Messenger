@@ -41,8 +41,6 @@ public class GroupMessengerActivity extends Activity {
          * In your implementation you need to get the message from the input box (EditText)
          * and send it to other AVDs.
          */
-
-
         final Button button = (Button) findViewById(R.id.button4);
 
         //https://developer.android.com/reference/android/widget/Button
