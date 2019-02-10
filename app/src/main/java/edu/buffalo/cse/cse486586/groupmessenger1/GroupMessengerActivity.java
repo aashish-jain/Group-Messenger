@@ -54,10 +54,8 @@ public class GroupMessengerActivity extends Activity {
                 String msg = editText.getText().toString() + "\n";
                 editText.setText(""); // This is one way to reset the input box.
                 textView.append("\t" + msg); // This is one way to display a string.
-
             }
         });
-
     }
 
     @Override

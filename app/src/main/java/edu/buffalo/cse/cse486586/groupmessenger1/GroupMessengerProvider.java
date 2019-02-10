@@ -6,6 +6,12 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.util.Log;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
 /**
  * GroupMessengerProvider is a key-value table. Once again, please note that we do not implement
  * full support for SQL as a usual ContentProvider does. We re-purpose ContentProvider's interface
@@ -24,7 +30,14 @@ import android.util.Log;
  * @author stevko
  *
  */
+
 public class GroupMessengerProvider extends ContentProvider {
+
+    //https://stackoverflow.com/questions/36652944/how-do-i-read-in-binary-data-files-in-java
+    static final String fileName = "database.db"
+    static File databaseFile;
+    static FileInputStream  fileInputStream;
+    static FileOutputStream fileOutputStream;
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
@@ -57,6 +70,27 @@ public class GroupMessengerProvider extends ContentProvider {
     @Override
     public boolean onCreate() {
         // If you need to perform any one-time initialization task, please do it here.
+        databaseFile = new File(fileName);
+
+        // If the file exists delete it as the app resets the database file every time its re-run for assignment
+        if (databaseFile.exists()) {
+            databaseFile.delete();
+            try {
+                databaseFile.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Open InputStream and OutputStreams
+        try {
+            fileInputStream = new FileInputStream(databaseFile);
+            fileOutputStream = new FileOutputStream(databaseFile);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        fileInputStream.readlin
         return false;
     }
 
