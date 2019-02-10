@@ -82,7 +82,7 @@ public class GroupMessengerProvider extends ContentProvider {
                 String toWrite = newKey + " " + values.get(key) + "\n";
                 fileOutputStream.write(toWrite.getBytes());
                 newKey++;
-                Log.d("Provider","Wrote"+ newKey + ":" + toWrite);
+                Log.d("Provider","Wrote "+ toWrite);
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -155,6 +155,7 @@ public class GroupMessengerProvider extends ContentProvider {
             while ( (s = bufferedReader.readLine()) != null){
                 //https://stackoverflow.com/questions/3481828/how-to-split-a-string-in-java
                 String[] values = s.split(" ");
+                System.out.println("Querying " + values[0]+" : "+values[1]);
                 if(values[0].equals(selection)) {
                     requiredValue = values[1];
                     break;
@@ -174,14 +175,6 @@ public class GroupMessengerProvider extends ContentProvider {
                 e.printStackTrace();
             }
         }
-
-        Log.v("query", selection + "Found " + requiredValue);
-
-        //https://developer.android.com/reference/android/database/MatrixCursor
-        //https://stackoverflow.com/questions/9917935/adding-rows-into-cursor-manually
-        MatrixCursor matrixCursor = new MatrixCursor(columns, 2);
-        matrixCursor.addRow(new Object[] {selection, requiredValue});
-
-        return matrixCursor;
+        return  null;
     }
 }
