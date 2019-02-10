@@ -20,6 +20,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.HashMap;
 
 /**
  * GroupMessengerProvider is a key-value table. Once again, please note that we do not implement
@@ -45,6 +46,9 @@ public class GroupMessengerProvider extends ContentProvider {
     //https://stackoverflow.com/questions/36652944/how-do-i-read-in-binary-data-files-in-java
     static final String fileName = "database.db";
     static String[] columns = {"key", "value"};
+
+    //For caching
+    static HashMap<String, String> keyValueStorage = new HashMap<String, String>();
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
@@ -77,11 +81,15 @@ public class GroupMessengerProvider extends ContentProvider {
             //https://docs.oracle.com/javase/7/docs/api/java/io/FileOutputStream.html
             //https://stackoverflow.com/questions/4015773/the-method-openfileoutput-is-undefined
             fileOutputStream = getContext().openFileOutput(fileName, Context.MODE_PRIVATE | Context.MODE_APPEND);
-            for( String key: values.keySet()){
-                String toWrite = values.get("key") + " " + values.get("value") + "\n";
-                fileOutputStream.write(toWrite.getBytes());
-                Log.d("Provider","Wrote "+ toWrite);
-            }
+            String key = (String) values.get("key"), value = (String) values.get("value");
+            String toWrite = key + " " + value + "\n";
+            fileOutputStream.write(toWrite.getBytes());
+            Log.d("Provider","Wrote "+ toWrite);
+
+            //Add it to the dictionary for faster access
+            //TODO: What if key is already present?
+            keyValueStorage.put(key, value);
+
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -137,44 +145,50 @@ public class GroupMessengerProvider extends ContentProvider {
          */
 
         String requiredValue = null;
-        BufferedReader bufferedReader = null;
-        InputStreamReader inputStreamReader = null;
-        FileInputStream fileInputStream = null;
-        try {
-            //https://docs.oracle.com/javase/7/docs/api/java/io/BufferedReader.html
-            //https://stackoverflow.com/questions/5200187/convert-inputstream-to-bufferedreader
-            fileInputStream = getContext().openFileInput(fileName);
-            inputStreamReader = new InputStreamReader(fileInputStream);
-            bufferedReader = new BufferedReader(inputStreamReader);
 
-            String s = null;
-            //To handle large files too. TODO: Replace with DB for PA 2B.
-            while ( (s = bufferedReader.readLine()) != null){
-                //https://stackoverflow.com/questions/3481828/how-to-split-a-string-in-java
-                String[] values = s.split(" ");
-                Log.d("Querying " , values[0]+" : "+values[1]);
-                if(values[0].equals(selection)) {
-                    requiredValue = values[1];
-                    break;
-                }
-            }
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
+        //Check if it is in the dicitionary. If yes then return
+        if(keyValueStorage.containsKey(selection)){
+            requiredValue = keyValueStorage.get(selection);
+        }
+        else {
+            BufferedReader bufferedReader = null;
+            InputStreamReader inputStreamReader = null;
+            FileInputStream fileInputStream = null;
             try {
-                bufferedReader.close();
-                inputStreamReader.close();
-                fileInputStream.close();
+                //https://docs.oracle.com/javase/7/docs/api/java/io/BufferedReader.html
+                //https://stackoverflow.com/questions/5200187/convert-inputstream-to-bufferedreader
+                fileInputStream = getContext().openFileInput(fileName);
+                inputStreamReader = new InputStreamReader(fileInputStream);
+                bufferedReader = new BufferedReader(inputStreamReader);
+
+                String s = null;
+                //To handle large files too. TODO: Replace with DB for PA 2B.
+                while ((s = bufferedReader.readLine()) != null) {
+                    //https://stackoverflow.com/questions/3481828/how-to-split-a-string-in-java
+                    String[] values = s.split(" ");
+                    Log.d("Querying ", values[0] + " : " + values[1]);
+                    if (values[0].equals(selection)) {
+                        requiredValue = values[1];
+                        break;
+                    }
+                }
+
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
+            } finally {
+                try {
+                    bufferedReader.close();
+                    inputStreamReader.close();
+                    fileInputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
         MatrixCursor matrixCursor = new MatrixCursor(columns, 2);
         matrixCursor.addRow(new Object[] {selection, requiredValue});
-
         return matrixCursor;
     }
 }
