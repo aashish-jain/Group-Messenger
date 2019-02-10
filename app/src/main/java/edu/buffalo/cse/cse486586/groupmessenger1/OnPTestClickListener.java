@@ -53,6 +53,7 @@ public class OnPTestClickListener implements OnClickListener {
      * @param authority
      * @return the URI
      */
+
     private Uri buildUri(String scheme, String authority) {
         Uri.Builder uriBuilder = new Uri.Builder();
         uriBuilder.authority(authority);

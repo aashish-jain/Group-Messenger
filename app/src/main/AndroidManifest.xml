@@ -20,6 +20,7 @@
         </activity>
         <provider android:name="edu.buffalo.cse.cse486586.groupmessenger1.GroupMessengerProvider"
             android:authorities="edu.buffalo.cse.cse486586.groupmessenger1.provider" />
+
     </application>
 
 </manifest>

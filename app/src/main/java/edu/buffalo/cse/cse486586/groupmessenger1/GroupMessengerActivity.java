@@ -1,13 +1,19 @@
 package edu.buffalo.cse.cse486586.groupmessenger1;
 
 import android.app.Activity;
+import android.content.ContentValues;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Parcel;
 import android.text.method.ScrollingMovementMethod;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+
+import java.util.List;
 
 /**
  * GroupMessengerActivity is the main Activity for the assignment.
@@ -17,6 +23,8 @@ import android.widget.TextView;
  */
 public class GroupMessengerActivity extends Activity {
 
+    static GroupMessengerProvider groupMessengerProvider = new GroupMessengerProvider();
+    static Uri uri;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,6 +52,10 @@ public class GroupMessengerActivity extends Activity {
 
 
         final Button button = (Button) findViewById(R.id.button4);
+        Uri.Builder uriBuilder = new Uri.Builder();
+        uriBuilder.authority("edu.buffalo.cse.cse486586.groupmessenger1.provider");
+        uriBuilder.scheme("content");
+        uri = uriBuilder.build();
 
         //https://developer.android.com/reference/android/widget/Button
         button.setOnClickListener(new View.OnClickListener() {
@@ -54,9 +66,14 @@ public class GroupMessengerActivity extends Activity {
                 String msg = editText.getText().toString() + "\n";
                 editText.setText(""); // This is one way to reset the input box.
                 textView.append("\t" + msg); // This is one way to display a string.
+                ContentValues contentValues = new ContentValues();
+                contentValues.put("", msg);
+                Log.d("UI", "Got "+msg);
+                groupMessengerProvider.insert(uri, contentValues);
             }
         });
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

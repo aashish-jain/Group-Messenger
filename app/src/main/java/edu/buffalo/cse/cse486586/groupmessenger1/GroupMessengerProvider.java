@@ -1,16 +1,25 @@
 package edu.buffalo.cse.cse486586.groupmessenger1;
 
+import android.app.Application;
 import android.content.ContentProvider;
 import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
+import android.database.MatrixCursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.util.Log;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 /**
  * GroupMessengerProvider is a key-value table. Once again, please note that we do not implement
@@ -35,7 +44,8 @@ public class GroupMessengerProvider extends ContentProvider {
 
     //https://stackoverflow.com/questions/36652944/how-do-i-read-in-binary-data-files-in-java
     static final String fileName = "database.db";
-    static File databaseFile;
+    static String[] columns = {"key", "value"};
+    static int newKey;
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
@@ -66,10 +76,13 @@ public class GroupMessengerProvider extends ContentProvider {
         FileOutputStream fileOutputStream = null;
         try {
             //https://docs.oracle.com/javase/7/docs/api/java/io/FileOutputStream.html
-            fileOutputStream = new FileOutputStream(databaseFile, true);
+            //https://stackoverflow.com/questions/4015773/the-method-openfileoutput-is-undefined
+            fileOutputStream = getContext().openFileOutput(fileName, Context.MODE_PRIVATE | Context.MODE_APPEND);
             for( String key: values.keySet()){
-                String toWrite = key + " " + values.get(key) + "\n";
+                String toWrite = newKey + " " + values.get(key) + "\n";
                 fileOutputStream.write(toWrite.getBytes());
+                newKey++;
+                Log.d("Provider","Wrote"+ newKey + ":" + toWrite);
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -90,8 +103,8 @@ public class GroupMessengerProvider extends ContentProvider {
     @Override
     public boolean onCreate() {
         // If you need to perform any one-time initialization task, please do it here.
+        File databaseFile;
         databaseFile = new File(fileName);
-
         // If the file exists delete it as the app resets the database file every time its re-run for assignment
         if (databaseFile.exists()) {
             databaseFile.delete();
@@ -101,6 +114,7 @@ public class GroupMessengerProvider extends ContentProvider {
                 e.printStackTrace();
             }
         }
+        newKey = 0;
         return true;
     }
 
@@ -125,9 +139,49 @@ public class GroupMessengerProvider extends ContentProvider {
          * http://developer.android.com/reference/android/database/MatrixCursor.html
          */
 
-//        fileOutputStream = new FileOutputStream(databaseFile);
+        String requiredValue = null;
+        BufferedReader bufferedReader = null;
+        InputStreamReader inputStreamReader = null;
+        FileInputStream fileInputStream = null;
+        try {
+            //https://docs.oracle.com/javase/7/docs/api/java/io/BufferedReader.html
+            //https://stackoverflow.com/questions/5200187/convert-inputstream-to-bufferedreader
+            fileInputStream = getContext().openFileInput(fileName);
+            inputStreamReader = new InputStreamReader(fileInputStream);
+            bufferedReader = new BufferedReader(inputStreamReader);
 
-        Log.v("query", selection);
-        return null;
+            String s = null;
+            //To handle large files too. TODO: Replace with DB for PA 2B.
+            while ( (s = bufferedReader.readLine()) != null){
+                //https://stackoverflow.com/questions/3481828/how-to-split-a-string-in-java
+                String[] values = s.split(" ");
+                if(values[0].equals(selection)) {
+                    requiredValue = values[1];
+                    break;
+                }
+            }
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                bufferedReader.close();
+                inputStreamReader.close();
+                fileInputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        Log.v("query", selection + "Found " + requiredValue);
+
+        //https://developer.android.com/reference/android/database/MatrixCursor
+        //https://stackoverflow.com/questions/9917935/adding-rows-into-cursor-manually
+        MatrixCursor matrixCursor = new MatrixCursor(columns, 2);
+        matrixCursor.addRow(new Object[] {selection, requiredValue});
+
+        return matrixCursor;
     }
 }
