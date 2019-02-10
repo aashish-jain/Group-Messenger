@@ -155,7 +155,7 @@ public class GroupMessengerProvider extends ContentProvider {
             while ( (s = bufferedReader.readLine()) != null){
                 //https://stackoverflow.com/questions/3481828/how-to-split-a-string-in-java
                 String[] values = s.split(" ");
-                System.out.println("Querying " + values[0]+" : "+values[1]);
+                Log.d("Querying " , values[0]+" : "+values[1]);
                 if(values[0].equals(selection)) {
                     requiredValue = values[1];
                     break;
@@ -175,6 +175,9 @@ public class GroupMessengerProvider extends ContentProvider {
                 e.printStackTrace();
             }
         }
-        return  null;
+        MatrixCursor matrixCursor = new MatrixCursor(columns, 2);
+        matrixCursor.addRow(new Object[] {selection, requiredValue});
+
+        return matrixCursor;
     }
 }
