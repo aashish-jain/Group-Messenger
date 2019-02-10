@@ -45,7 +45,6 @@ public class GroupMessengerProvider extends ContentProvider {
     //https://stackoverflow.com/questions/36652944/how-do-i-read-in-binary-data-files-in-java
     static final String fileName = "database.db";
     static String[] columns = {"key", "value"};
-    static int newKey;
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
@@ -79,9 +78,8 @@ public class GroupMessengerProvider extends ContentProvider {
             //https://stackoverflow.com/questions/4015773/the-method-openfileoutput-is-undefined
             fileOutputStream = getContext().openFileOutput(fileName, Context.MODE_PRIVATE | Context.MODE_APPEND);
             for( String key: values.keySet()){
-                String toWrite = newKey + " " + values.get(key) + "\n";
+                String toWrite = values.get("key") + " " + values.get("value") + "\n";
                 fileOutputStream.write(toWrite.getBytes());
-                newKey++;
                 Log.d("Provider","Wrote "+ toWrite);
             }
         } catch (FileNotFoundException e) {
@@ -114,7 +112,6 @@ public class GroupMessengerProvider extends ContentProvider {
                 e.printStackTrace();
             }
         }
-        newKey = 0;
         return true;
     }
 
