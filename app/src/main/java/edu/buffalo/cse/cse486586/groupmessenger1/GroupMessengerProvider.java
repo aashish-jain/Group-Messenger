@@ -3,6 +3,7 @@ package edu.buffalo.cse.cse486586.groupmessenger1;
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.util.Log;
 
@@ -33,12 +34,9 @@ import java.io.IOException;
 
 public class GroupMessengerProvider extends ContentProvider {
 
-    //https://stackoverflow.com/questions/36652944/how-do-i-read-in-binary-data-files-in-java
-    static final String fileName = "database.db"
-    static File databaseFile;
-    static FileInputStream  fileInputStream;
-    static FileOutputStream fileOutputStream;
-
+    private KeyValueDbHelper mDbHelper;
+    private SQLiteDatabase db;
+    private int lastKeyValue;
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
         // You do not need to implement this.
@@ -63,6 +61,8 @@ public class GroupMessengerProvider extends ContentProvider {
          * internal storage option that we used in PA1. If you want to use that option, please
          * take a look at the code for PA1.
          */
+        lastKeyValue ++;
+        lastKeyValue = db.insert(KeyValueContract.KeyValue.TABLE_NAME, (int) String.valueOf(lastKeyValue), values);
         Log.v("insert", values.toString());
         return uri;
     }
@@ -70,27 +70,9 @@ public class GroupMessengerProvider extends ContentProvider {
     @Override
     public boolean onCreate() {
         // If you need to perform any one-time initialization task, please do it here.
-        databaseFile = new File(fileName);
-
-        // If the file exists delete it as the app resets the database file every time its re-run for assignment
-        if (databaseFile.exists()) {
-            databaseFile.delete();
-            try {
-                databaseFile.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        // Open InputStream and OutputStreams
-        try {
-            fileInputStream = new FileInputStream(databaseFile);
-            fileOutputStream = new FileOutputStream(databaseFile);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        fileInputStream.readlin
+        mDbHelper = new KeyValueDbHelper(getContext());
+        db = mDbHelper.getWritableDatabase();
+        lastKeyValue = -1;
         return false;
     }
 
