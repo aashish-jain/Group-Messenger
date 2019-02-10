@@ -23,7 +23,6 @@ import java.util.List;
  */
 public class GroupMessengerActivity extends Activity {
 
-    static GroupMessengerProvider groupMessengerProvider = new GroupMessengerProvider();
     static Uri uri;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,9 +66,12 @@ public class GroupMessengerActivity extends Activity {
                 editText.setText(""); // This is one way to reset the input box.
                 textView.append("\t" + msg); // This is one way to display a string.
                 ContentValues contentValues = new ContentValues();
-                contentValues.put("", msg);
+                contentValues.put("key", "key");
+                contentValues.put("value", msg);
                 Log.d("UI", "Got "+msg);
-                groupMessengerProvider.insert(uri, contentValues);
+
+                //TODO: Add it as a new thread to keep this thread light
+                getContentResolver().insert(uri, contentValues);
             }
         });
     }

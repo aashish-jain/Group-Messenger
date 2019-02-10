@@ -96,7 +96,8 @@ public class GroupMessengerProvider extends ContentProvider {
             e.printStackTrace();
         } finally {
             try {
-                fileOutputStream.close();
+                if(fileOutputStream != null)
+                    fileOutputStream.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
