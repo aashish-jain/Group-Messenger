@@ -34,10 +34,8 @@ import java.io.IOException;
 public class GroupMessengerProvider extends ContentProvider {
 
     //https://stackoverflow.com/questions/36652944/how-do-i-read-in-binary-data-files-in-java
-    static final String fileName = "database.db"
+    static final String fileName = "database.db";
     static File databaseFile;
-    static FileInputStream  fileInputStream;
-    static FileOutputStream fileOutputStream;
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
@@ -63,6 +61,28 @@ public class GroupMessengerProvider extends ContentProvider {
          * internal storage option that we used in PA1. If you want to use that option, please
          * take a look at the code for PA1.
          */
+
+        // Open OutputStream and write to the file fo all values
+        FileOutputStream fileOutputStream = null;
+        try {
+            //https://docs.oracle.com/javase/7/docs/api/java/io/FileOutputStream.html
+            fileOutputStream = new FileOutputStream(databaseFile, true);
+            for( String key: values.keySet()){
+                String toWrite = key + " " + values.get(key) + "\n";
+                fileOutputStream.write(toWrite.getBytes());
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                fileOutputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
         Log.v("insert", values.toString());
         return uri;
     }
@@ -81,17 +101,7 @@ public class GroupMessengerProvider extends ContentProvider {
                 e.printStackTrace();
             }
         }
-
-        // Open InputStream and OutputStreams
-        try {
-            fileInputStream = new FileInputStream(databaseFile);
-            fileOutputStream = new FileOutputStream(databaseFile);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        fileInputStream.readlin
-        return false;
+        return true;
     }
 
     @Override
@@ -114,6 +124,9 @@ public class GroupMessengerProvider extends ContentProvider {
          * recommend building a MatrixCursor described at:
          * http://developer.android.com/reference/android/database/MatrixCursor.html
          */
+
+//        fileOutputStream = new FileOutputStream(databaseFile);
+
         Log.v("query", selection);
         return null;
     }
