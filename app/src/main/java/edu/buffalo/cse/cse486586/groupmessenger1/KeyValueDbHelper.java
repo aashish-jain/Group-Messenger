@@ -15,7 +15,6 @@ public class KeyValueDbHelper extends SQLiteOpenHelper {
     }
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(KeyValueContract.SQL_CREATE_TABLE);
-
     }
 
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
