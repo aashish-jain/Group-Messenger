@@ -3,6 +3,7 @@ package edu.buffalo.cse.cse486586.groupmessenger1;
 import android.app.Activity;
 import android.content.ContentValues;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.text.method.ScrollingMovementMethod;
@@ -13,8 +14,18 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+
+import static android.content.ContentValues.TAG;
 
 /**
  * GroupMessengerActivity is the main Activity for the assignment.
@@ -25,14 +36,13 @@ import java.util.List;
 public class GroupMessengerActivity extends Activity {
 
     static Uri uri;
-    static final int SERVER_PORT = 10000;
-    static final int[] REMOTE_PORTS = new int[]{11108, 11112, 11116, 11120, 11124};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_group_messenger);
 
+        new Thread(new ServerTask()).start();
         /*
          * TODO: Use the TextView to display your messages. Though there is no grading component
          * on how you display the messages, if you implement it, it'll make your debugging easier.
@@ -74,8 +84,11 @@ public class GroupMessengerActivity extends Activity {
                 contentValues.put("value", msg);
                 Log.d("UI", "Got "+msg);
 
-                //TODO: Add it as a new thread to keep this thread light
-                getContentResolver().insert(uri, contentValues);
+//                //TODO: Add it as a new thread to keep this thread light
+//                getContentResolver().insert(uri, contentValues);
+
+                //TODO: Create a new Client Thread to dispatch messages
+                new ClientTask().executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, msg);
             }
         });
     }
@@ -86,5 +99,102 @@ public class GroupMessengerActivity extends Activity {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.activity_group_messenger, menu);
         return true;
+    }
+}
+
+class ServerTask implements Runnable {
+    static final int SERVER_PORT = 10000;
+    static final String TAG = "Server Thread";
+    public void run() {
+
+        Log.d(TAG, "Started Server Thread");
+        //Open a socket
+        ServerSocket serverSocket = null;
+        try {
+            serverSocket = new ServerSocket(SERVER_PORT);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        //read from socket to ObjectInputStream object
+        Socket socket = null;
+        ObjectOutputStream oos = null;
+        ObjectInputStream ois = null;
+        while (true)
+            try {
+                socket = serverSocket.accept();
+                //https://stackoverflow.com/questions/11521027/whats-the-difference-between-dataoutputstream-and-objectoutputstream
+                ois = new ObjectInputStream(socket.getInputStream());
+
+                //Read from the socket
+                String message = ois.readUTF();
+
+                //Acknowledgement
+                oos = new ObjectOutputStream(socket.getOutputStream());
+                oos.writeByte(255);
+                oos.close();
+
+                Log.d("Message Received: ", message);
+                // TODO: Call contentproviders insert operation
+                ois.close();
+            } catch (IOException e) {
+                Log.e(TAG, "ServerTask socket IOException");
+                //Workaround for unable to close
+                if(false)
+                    break;
+            }
+
+
+        try {
+            if(socket!=null)
+                socket.close();
+            if(ois!=null)
+                ois.close();
+            if(oos!=null)
+                oos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+class ClientTask extends AsyncTask<String, Void, Void> {
+    static final int[] REMOTE_PORTS = new int[]{11108, 11112, 11116, 11120, 11124};
+    static final String TAG = "Client Task";
+
+    @Override
+    protected Void doInBackground(String... msgs) {
+        try {
+
+            List<Socket> sockets = new LinkedList<Socket>();
+
+            for(int remotePort: REMOTE_PORTS)
+                sockets.add( new Socket(InetAddress.getByAddress(new byte[]{10, 0, 2, 2}),
+                    remotePort));
+
+            String msgToSend = msgs[0];
+
+            //https://stackoverflow.com/questions/5680259/using-sockets-to-send-and-receive-data
+            //https://stackoverflow.com/questions/49654735/send-objects-and-strings-over-socket
+
+            int count = 0;
+            for( Socket socket : sockets) {
+                Log.d("Client", "Sending message " + msgToSend);
+                ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+                oos.writeUTF(msgToSend);
+                count++;
+                Log.d("Client", "Sent to "+ count);
+                ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+                byte ack = ois.readByte();
+                oos.close();
+                socket.close();
+            }
+        } catch (UnknownHostException e) {
+            Log.e(TAG, "ClientTask UnknownHostException");
+        } catch (IOException e) {
+            Log.e(TAG, "ClientTask socket IOException");
+        }
+
+        return null;
     }
 }
