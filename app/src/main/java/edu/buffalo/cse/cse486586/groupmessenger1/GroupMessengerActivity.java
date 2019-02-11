@@ -13,6 +13,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -24,6 +25,9 @@ import java.util.List;
 public class GroupMessengerActivity extends Activity {
 
     static Uri uri;
+    static final int SERVER_PORT = 10000;
+    static final int[] REMOTE_PORTS = new int[]{11108, 11112, 11116, 11120, 11124};
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
