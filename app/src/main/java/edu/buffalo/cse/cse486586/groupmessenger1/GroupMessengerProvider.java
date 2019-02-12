@@ -84,11 +84,11 @@ public class GroupMessengerProvider extends ContentProvider {
             String key = (String) values.get("key"), value = (String) values.get("value");
             String toWrite = key + " " + value + "\n";
             fileOutputStream.write(toWrite.getBytes());
-            Log.d("Provider","Wrote "+ toWrite);
 
             //Add it to the dictionary for faster access
             //TODO: What if key is already present?
             keyValueStorage.put(key, value);
+            Log.v("insert", key+" "+value);
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -103,7 +103,6 @@ public class GroupMessengerProvider extends ContentProvider {
             }
         }
 
-        Log.v("insert", values.toString());
         return uri;
     }
 
@@ -147,47 +146,52 @@ public class GroupMessengerProvider extends ContentProvider {
 
         String requiredValue = null;
 
+        Log.d("QUERY", "Queried " + selection);
         //Check if it is in the dicitionary. If yes then return
         if(keyValueStorage.containsKey(selection)){
             requiredValue = keyValueStorage.get(selection);
         }
         else {
-            BufferedReader bufferedReader = null;
-            InputStreamReader inputStreamReader = null;
-            FileInputStream fileInputStream = null;
-            try {
-                //https://docs.oracle.com/javase/7/docs/api/java/io/BufferedReader.html
-                //https://stackoverflow.com/questions/5200187/convert-inputstream-to-bufferedreader
-                fileInputStream = getContext().openFileInput(fileName);
-                inputStreamReader = new InputStreamReader(fileInputStream);
-                bufferedReader = new BufferedReader(inputStreamReader);
-
-                String s = null;
-                //To handle large files too. TODO: Replace with DB for PA 2B.
-                while ((s = bufferedReader.readLine()) != null) {
-                    //https://stackoverflow.com/questions/3481828/how-to-split-a-string-in-java
-                    String[] values = s.split(" ");
-                    Log.d("Querying ", values[0] + " : " + values[1]);
-                    if (values[0].equals(selection)) {
-                        requiredValue = values[1];
-                        break;
-                    }
-                }
-
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    bufferedReader.close();
-                    inputStreamReader.close();
-                    fileInputStream.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+            Log.e("QUERY", "NOT FOUND "+selection);
         }
+
+//        else {
+//            BufferedReader bufferedReader = null;
+//            InputStreamReader inputStreamReader = null;
+//            FileInputStream fileInputStream = null;
+//            try {
+//                //https://docs.oracle.com/javase/7/docs/api/java/io/BufferedReader.html
+//                //https://stackoverflow.com/questions/5200187/convert-inputstream-to-bufferedreader
+//                fileInputStream = getContext().openFileInput(fileName);
+//                inputStreamReader = new InputStreamReader(fileInputStream);
+//                bufferedReader = new BufferedReader(inputStreamReader);
+//
+//                String s = null;
+//                //To handle large files too. TODO: Replace with DB for PA 2B.
+//                while ((s = bufferedReader.readLine()) != null) {
+//                    //https://stackoverflow.com/questions/3481828/how-to-split-a-string-in-java
+//                    String[] values = s.split(" ");
+//                    Log.d("Querying ", values[0] + " : " + values[1]);
+//                    if (values[0].equals(selection)) {
+//                        requiredValue = values[1];
+//                        break;
+//                    }
+//                }
+//
+//            } catch (FileNotFoundException e) {
+//                e.printStackTrace();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            } finally {
+//                try {
+//                    bufferedReader.close();
+//                    inputStreamReader.close();
+//                    fileInputStream.close();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
         MatrixCursor matrixCursor = new MatrixCursor(columns, 2);
         matrixCursor.addRow(new Object[] {selection, requiredValue});
         return matrixCursor;

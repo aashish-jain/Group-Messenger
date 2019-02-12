@@ -1,7 +1,9 @@
 package edu.buffalo.cse.cse486586.groupmessenger1;
 
 import android.app.Activity;
+import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Context;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -35,13 +37,10 @@ import static android.content.ContentValues.TAG;
  */
 public class GroupMessengerActivity extends Activity {
 
-    static Uri uri;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_group_messenger);
-
         new Thread(new ServerTask()).start();
         /*
          * TODO: Use the TextView to display your messages. Though there is no grading component
@@ -49,26 +48,21 @@ public class GroupMessengerActivity extends Activity {
          */
         TextView tv = (TextView) findViewById(R.id.textView1);
         tv.setMovementMethod(new ScrollingMovementMethod());
-        
+
         /*
          * Registers OnPTestClickListener for "button1" in the la`````yout, which is the "PTest" button.
          * OnPTestClickListener demonstrates how to access a ContentProvider.
          */
         findViewById(R.id.button1).setOnClickListener(
                 new OnPTestClickListener(tv, getContentResolver()));
-        
+
         /*
          * TODO: You need to register and implement an OnClickListener for the "Send" button.
          * In your implementation you need to get the message from the input box (EditText)
          * and send it to other AVDs.
          */
 
-
         final Button button = (Button) findViewById(R.id.button4);
-        Uri.Builder uriBuilder = new Uri.Builder();
-        uriBuilder.authority("edu.buffalo.cse.cse486586.groupmessenger1.provider");
-        uriBuilder.scheme("content");
-        uri = uriBuilder.build();
 
         //https://developer.android.com/reference/android/widget/Button
         button.setOnClickListener(new View.OnClickListener() {
@@ -79,15 +73,8 @@ public class GroupMessengerActivity extends Activity {
                 String msg = editText.getText().toString() + "\n";
                 editText.setText(""); // This is ``one way to reset the input box.
                 textView.append("\t" + msg); // This is one way to display a string.
-                ContentValues contentValues = new ContentValues();
-                contentValues.put("key", "key");
-                contentValues.put("value", msg);
-                Log.d("UI", "Got "+msg);
+                Log.d("UI", "Got " + msg);
 
-//                //TODO: Add it as a new thread to keep this thread light
-//                getContentResolver().insert(uri, contentValues);
-
-                //TODO: Create a new Client Thread to dispatch messages
                 new ClientTask().executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, msg);
             }
         });
@@ -100,106 +87,101 @@ public class GroupMessengerActivity extends Activity {
         getMenuInflater().inflate(R.menu.activity_group_messenger, menu);
         return true;
     }
-}
 
-class ServerTask implements Runnable {
-    static final int SERVER_PORT = 10000;
-    static final String TAG = "Server Thread";
-    public void run() {
 
-        Log.d(TAG, "Started Server Thread");
-        //Open a socket
-        ServerSocket serverSocket = null;
-        try {
-            serverSocket = new ServerSocket(SERVER_PORT);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    private class ServerTask implements Runnable {
+        static final int SERVER_PORT = 10000;
+        static final String TAG = "Server Thread";
+        int key;
 
-        //read from socket to ObjectInputStream object
-        Socket socket = null;
-        ObjectOutputStream oos = null;
-        ObjectInputStream ois = null;
-        while (true)
+        public void run() {
+
+            Log.d(TAG, "Started Server Thread");
+            //Open a socket
+            ServerSocket serverSocket = null;
             try {
-                socket = serverSocket.accept();
-                Log.d(TAG, "Incoming");
-
-
-                //https://stackoverflow.com/questions/11521027/whats-the-difference-between-dataoutputstream-and-objectoutputstream
-                ois = new ObjectInputStream(socket.getInputStream());
-                Log.d(TAG, "Innncoming");
-
-                Log.d( TAG, "Connected");
-                //Read from the socket
-                String message = ois.readUTF();
-                Log.d(TAG, "Message Received: " + message);
-
-                //Acknowledgement
-                oos = new ObjectOutputStream(socket.getOutputStream());
-                oos.writeByte(255);
-                oos.flush();
-                Log.d(TAG, "Send ACK");
-
-                oos.close();
-                // TODO: Call contentproviders insert operation
-                ois.close();
+                serverSocket = new ServerSocket(SERVER_PORT);
             } catch (IOException e) {
-                Log.e(TAG, "ServerTask socket IOException");
-                //Workaround for unable to close
-                if(false)
-                    break;
+                e.printStackTrace();
             }
 
+            //read from socket to ObjectInputStream object
+            Socket socket = null;
+            ObjectOutputStream oos = null;
+            ObjectInputStream ois = null;
 
-        try {
-            if(socket!=null)
-                socket.close();
-            if(ois!=null)
-                ois.close();
-            if(oos!=null)
-                oos.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+            Uri.Builder uriBuilder = new Uri.Builder();
+            uriBuilder.authority("edu.buffalo.cse.cse486586.groupmessenger1.provider");
+            uriBuilder.scheme("content");
+            Uri uri = uriBuilder.build();
+
+            while (true)
+                try {
+                    socket = serverSocket.accept();
+
+                    //https://stackoverflow.com/questions/11521027/whats-the-difference-between-dataoutputstream-and-objectoutputstream
+                    ois = new ObjectInputStream(socket.getInputStream());
+
+                    //Read from the socket
+                    String message = ois.readUTF();
+                    Log.d(TAG, "Message Received: " + message);
+
+                    //Acknowledgement
+                    oos = new ObjectOutputStream(socket.getOutputStream());
+                    oos.writeByte(255);
+                    oos.flush();
+
+                    ContentValues contentValues = new ContentValues();
+                    contentValues.put("key", new Integer(key).toString());
+                    contentValues.put("value", message);
+
+                    getContentResolver().insert(uri, contentValues);
+
+                    oos.close();
+                    ois.close();
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    Log.e(TAG, "ServerTask socket IOException");
+                    //Workaround for unable to close
+                    if (false)
+                        break;
+                }
         }
     }
-}
 
-class ClientTask extends AsyncTask<String, Void, Void> {
-    static final int[] REMOTE_PORTS = new int[]{11108, 11112, 11116, 11120, 11124};
-    static final String TAG = "Client Task";
+    private class ClientTask extends AsyncTask<String, Void, Void> {
+        final int[] REMOTE_PORTS = new int[]{11108, 11112, 11116, 11120, 11124};
+        final String TAG = "Client Task";
 
-    @Override
-    protected Void doInBackground(String... msgs) {
-        Socket socket = null;
-        try {
-
+        @Override
+        protected Void doInBackground(String... msgs) {
+            Socket socket = null;
             String msgToSend = msgs[0];
-            for(int remotePort: REMOTE_PORTS) {
-                socket = new Socket(InetAddress.getByAddress(new byte[]{10, 0, 2, 2}),
-                        remotePort);
-                Log.d(TAG, "Added port"+remotePort);
+            try {
+                for (int remotePort : REMOTE_PORTS) {
+                    socket = new Socket(InetAddress.getByAddress(new byte[]{10, 0, 2, 2}),
+                            remotePort);
 
-                //https://stackoverflow.com/questions/5680259/using-sockets-to-send-and-receive-data
-                //https://stackoverflow.com/questions/49654735/send-objects-and-strings-over-socket
+                    //https://stackoverflow.com/questions/5680259/using-sockets-to-send-and-receive-data
+                    //https://stackoverflow.com/questions/49654735/send-objects-and-strings-over-socket
 
-                Log.d("Client", "Sending message " + msgToSend);
-                ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-                oos.writeUTF(msgToSend + "\n");
-                oos.flush();
-                Log.d("Client", "Sent");
-                ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-                byte ack = ois.readByte();
-                Log.d("Client", "Recieved ACK ");
-                oos.close();
-                socket.close();
+                    ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+                    oos.writeUTF(msgToSend);
+                    oos.flush();
+                    ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+                    byte ack = ois.readByte();
+                    oos.close();
+                    socket.close();
+                }
+            } catch (UnknownHostException e) {
+                Log.e(TAG, "ClientTask UnknownHostException");
+            } catch (IOException e) {
+                e.printStackTrace();
+                Log.e(TAG, "ClientTask socket IOException");
             }
-        } catch (UnknownHostException e) {
-            Log.e(TAG, "ClientTask UnknownHostException");
-        } catch (IOException e) {
-            e.printStackTrace();
-            Log.e(TAG, "ClientTask socket IOException");
+            Log.d("Client", "Sent message " + msgToSend);
+            return null;
         }
-        return null;
     }
 }
