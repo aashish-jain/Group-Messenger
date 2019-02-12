@@ -51,7 +51,7 @@ public class GroupMessengerActivity extends Activity {
         tv.setMovementMethod(new ScrollingMovementMethod());
         
         /*
-         * Registers OnPTestClickListener for "button1" in the layout, which is the "PTest" button.
+         * Registers OnPTestClickListener for "button1" in the la`````yout, which is the "PTest" button.
          * OnPTestClickListener demonstrates how to access a ContentProvider.
          */
         findViewById(R.id.button1).setOnClickListener(
@@ -77,7 +77,7 @@ public class GroupMessengerActivity extends Activity {
                 EditText editText = (EditText) findViewById(R.id.editText1);
                 TextView textView = (TextView) findViewById(R.id.textView1);
                 String msg = editText.getText().toString() + "\n";
-                editText.setText(""); // This is one way to reset the input box.
+                editText.setText(""); // This is ``one way to reset the input box.
                 textView.append("\t" + msg); // This is one way to display a string.
                 ContentValues contentValues = new ContentValues();
                 contentValues.put("key", "key");
@@ -123,18 +123,25 @@ class ServerTask implements Runnable {
         while (true)
             try {
                 socket = serverSocket.accept();
+                Log.d(TAG, "Incoming");
+
+
                 //https://stackoverflow.com/questions/11521027/whats-the-difference-between-dataoutputstream-and-objectoutputstream
                 ois = new ObjectInputStream(socket.getInputStream());
+                Log.d(TAG, "Innncoming");
 
+                Log.d( TAG, "Connected");
                 //Read from the socket
                 String message = ois.readUTF();
+                Log.d(TAG, "Message Received: " + message);
 
                 //Acknowledgement
                 oos = new ObjectOutputStream(socket.getOutputStream());
                 oos.writeByte(255);
-                oos.close();
+                oos.flush();
+                Log.d(TAG, "Send ACK");
 
-                Log.d("Message Received: ", message);
+                oos.close();
                 // TODO: Call contentproviders insert operation
                 ois.close();
             } catch (IOException e) {
@@ -164,37 +171,35 @@ class ClientTask extends AsyncTask<String, Void, Void> {
 
     @Override
     protected Void doInBackground(String... msgs) {
+        Socket socket = null;
         try {
 
-            List<Socket> sockets = new LinkedList<Socket>();
-
-            for(int remotePort: REMOTE_PORTS)
-                sockets.add( new Socket(InetAddress.getByAddress(new byte[]{10, 0, 2, 2}),
-                    remotePort));
-
             String msgToSend = msgs[0];
+            for(int remotePort: REMOTE_PORTS) {
+                socket = new Socket(InetAddress.getByAddress(new byte[]{10, 0, 2, 2}),
+                        remotePort);
+                Log.d(TAG, "Added port"+remotePort);
 
-            //https://stackoverflow.com/questions/5680259/using-sockets-to-send-and-receive-data
-            //https://stackoverflow.com/questions/49654735/send-objects-and-strings-over-socket
+                //https://stackoverflow.com/questions/5680259/using-sockets-to-send-and-receive-data
+                //https://stackoverflow.com/questions/49654735/send-objects-and-strings-over-socket
 
-            int count = 0;
-            for( Socket socket : sockets) {
                 Log.d("Client", "Sending message " + msgToSend);
                 ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-                oos.writeUTF(msgToSend);
-                count++;
-                Log.d("Client", "Sent to "+ count);
+                oos.writeUTF(msgToSend + "\n");
+                oos.flush();
+                Log.d("Client", "Sent");
                 ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
                 byte ack = ois.readByte();
+                Log.d("Client", "Recieved ACK ");
                 oos.close();
                 socket.close();
             }
         } catch (UnknownHostException e) {
             Log.e(TAG, "ClientTask UnknownHostException");
         } catch (IOException e) {
+            e.printStackTrace();
             Log.e(TAG, "ClientTask socket IOException");
         }
-
         return null;
     }
 }
