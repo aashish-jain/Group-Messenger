@@ -96,7 +96,6 @@ public class GroupMessengerActivity extends Activity {
 
         public void run() {
 
-            Log.d(TAG, "Started Server Thread");
             //Open a socket
             ServerSocket serverSocket = null;
             try {
@@ -124,7 +123,6 @@ public class GroupMessengerActivity extends Activity {
 
                     //Read from the socket
                     String message = ois.readUTF();
-                    Log.d(TAG, "Message Received: " + message);
 
                     //Acknowledgement
                     oos = new ObjectOutputStream(socket.getOutputStream());
@@ -134,7 +132,7 @@ public class GroupMessengerActivity extends Activity {
                     ContentValues contentValues = new ContentValues();
                     contentValues.put("key", new Integer(key).toString());
                     contentValues.put("value", message);
-
+                    key++;
                     getContentResolver().insert(uri, contentValues);
 
                     oos.close();

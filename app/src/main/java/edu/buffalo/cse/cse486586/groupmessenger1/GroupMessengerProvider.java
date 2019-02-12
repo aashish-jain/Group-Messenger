@@ -152,46 +152,46 @@ public class GroupMessengerProvider extends ContentProvider {
             requiredValue = keyValueStorage.get(selection);
         }
         else {
-            Log.e("QUERY", "NOT FOUND "+selection);
+            BufferedReader bufferedReader = null;
+            InputStreamReader inputStreamReader = null;
+            FileInputStream fileInputStream = null;
+            try {
+                //https://docs.oracle.com/javase/7/docs/api/java/io/BufferedReader.html
+                //https://stackoverflow.com/questions/5200187/convert-inputstream-to-bufferedreader
+                fileInputStream = getContext().openFileInput(fileName);
+                inputStreamReader = new InputStreamReader(fileInputStream);
+                bufferedReader = new BufferedReader(inputStreamReader);
+
+                String s = null;
+                //To handle large files too. TODO: Replace with DB for PA 2B.
+                while ((s = bufferedReader.readLine()) != null) {
+                    //https://stackoverflow.com/questions/3481828/how-to-split-a-string-in-java
+                    String[] values = s.split(" ");
+                    Log.d("Querying ", values[0] + " : " + values[1]);
+                    if (values[0].equals(selection)) {
+                        requiredValue = values[1];
+                        break;
+                    }
+                }
+
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    bufferedReader.close();
+                    inputStreamReader.close();
+                    fileInputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
-//        else {
-//            BufferedReader bufferedReader = null;
-//            InputStreamReader inputStreamReader = null;
-//            FileInputStream fileInputStream = null;
-//            try {
-//                //https://docs.oracle.com/javase/7/docs/api/java/io/BufferedReader.html
-//                //https://stackoverflow.com/questions/5200187/convert-inputstream-to-bufferedreader
-//                fileInputStream = getContext().openFileInput(fileName);
-//                inputStreamReader = new InputStreamReader(fileInputStream);
-//                bufferedReader = new BufferedReader(inputStreamReader);
-//
-//                String s = null;
-//                //To handle large files too. TODO: Replace with DB for PA 2B.
-//                while ((s = bufferedReader.readLine()) != null) {
-//                    //https://stackoverflow.com/questions/3481828/how-to-split-a-string-in-java
-//                    String[] values = s.split(" ");
-//                    Log.d("Querying ", values[0] + " : " + values[1]);
-//                    if (values[0].equals(selection)) {
-//                        requiredValue = values[1];
-//                        break;
-//                    }
-//                }
-//
-//            } catch (FileNotFoundException e) {
-//                e.printStackTrace();
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            } finally {
-//                try {
-//                    bufferedReader.close();
-//                    inputStreamReader.close();
-//                    fileInputStream.close();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
+        if(requiredValue==null)
+            Log.e("QUERY", "NOT FOUND "+selection);
+
         MatrixCursor matrixCursor = new MatrixCursor(columns, 2);
         matrixCursor.addRow(new Object[] {selection, requiredValue});
         return matrixCursor;
