@@ -5,6 +5,7 @@ import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.MatrixCursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -72,6 +73,7 @@ public class GroupMessengerProvider extends ContentProvider {
     @Override
     public Uri insert(Uri uri, ContentValues values) {
         //Update if column is already present
+        //https://stackoverflow.com/questions/13311727/android-sqlite-insert-or-update
         Log.d("INSERT", values.toString());
         long newRowId = dbWriter.insertWithOnConflict(KeyValueStorageContract.KeyValueEntry.TABLE_NAME, null, values, SQLiteDatabase.CONFLICT_REPLACE);
         return uri;
@@ -106,10 +108,23 @@ public class GroupMessengerProvider extends ContentProvider {
          * http://developer.android.com/reference/android/database/MatrixCursor.html
          */
 
-        Log.d("QUERY", selection);
+        Log.d("QUERYING", "key = " + selection);
+
 
         //https://developer.android.com/training/data-storage/sqlite
-        return dbReader.query(
+
+        // Define a projection that specifies which columns from the database
+        // you will actually use after this query.
+        projection = new String[] {
+                KeyValueStorageContract.KeyValueEntry.COLUMN_KEY,
+                KeyValueStorageContract.KeyValueEntry.COLUMN_VALUE
+        };
+
+        selectionArgs = new String[]{ selection };
+        selection = KeyValueStorageContract.KeyValueEntry.COLUMN_KEY + " = ?";
+
+        //https://developer.android.com/training/data-storage/sqlite
+        Cursor cursor = dbReader.query(
                 KeyValueStorageContract.KeyValueEntry.TABLE_NAME,   // The table to query
                 projection,             // The array of columns to return (pass null to get all)
                 selection,              // The columns for the WHERE clause
@@ -118,5 +133,9 @@ public class GroupMessengerProvider extends ContentProvider {
                 null,                   // don't filter by row groups
                 sortOrder               // The sort order
         );
+
+        if(cursor.getCount() == 0)
+            Log.e("QUERY", selectionArgs[0] + " not found :-(");
+        return  cursor;
     }
 }
