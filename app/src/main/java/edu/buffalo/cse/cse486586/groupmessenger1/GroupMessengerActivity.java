@@ -37,6 +37,7 @@ import static android.content.ContentValues.TAG;
  */
 public class GroupMessengerActivity extends Activity {
 
+    static  TextView textView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,15 +47,15 @@ public class GroupMessengerActivity extends Activity {
          * TODO: Use the TextView to display your messages. Though there is no grading component
          * on how you display the messages, if you implement it, it'll make your debugging easier.
          */
-        TextView tv = (TextView) findViewById(R.id.textView1);
-        tv.setMovementMethod(new ScrollingMovementMethod());
+        textView = (TextView) findViewById(R.id.textView1);
+        textView.setMovementMethod(new ScrollingMovementMethod());
 
         /*
          * Registers OnPTestClickListener for "button1" in the la`````yout, which is the "PTest" button.
          * OnPTestClickListener demonstrates how to access a ContentProvider.
          */
         findViewById(R.id.button1).setOnClickListener(
-                new OnPTestClickListener(tv, getContentResolver()));
+                new OnPTestClickListener(textView, getContentResolver()));
 
         /*
          * TODO: You need to register and implement an OnClickListener for the "Send" button.
@@ -69,10 +70,9 @@ public class GroupMessengerActivity extends Activity {
             @Override
             public void onClick(View v) {
                 EditText editText = (EditText) findViewById(R.id.editText1);
-                TextView textView = (TextView) findViewById(R.id.textView1);
+                textView = (TextView) findViewById(R.id.textView1);
                 String msg = editText.getText().toString() + "\n";
                 editText.setText(""); // This is ``one way to reset the input box.
-                textView.append("\t" + msg); // This is one way to display a string.
                 Log.d("UI", "Got " + msg);
 
                 new ClientTask().executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, msg);
@@ -92,8 +92,22 @@ public class GroupMessengerActivity extends Activity {
     private class ServerTask implements Runnable {
         static final int SERVER_PORT = 10000;
         static final String TAG = "Server Thread";
+
         int key;
 
+        //https://stackoverflow.com/questions/5853167/runnable-with-a-parameter/5853198
+        private class UpdateTextView implements Runnable{
+            String message;
+
+            UpdateTextView(String msg){
+                message = msg;
+            }
+
+            @Override
+            public void run() {
+                textView.append(message);
+            }
+        }
         public void run() {
 
             //Open a socket
@@ -133,6 +147,11 @@ public class GroupMessengerActivity extends Activity {
                     contentValues.put("key", new Integer(key).toString());
                     contentValues.put("value", message);
                     key++;
+
+                    //https://stackoverflow.com/questions/12716850/android-update-textview-in-thread-and-runnable
+                    //Update the UI thread
+                    runOnUiThread(new UpdateTextView(message));
+
                     getContentResolver().insert(uri, contentValues);
 
                     oos.close();
