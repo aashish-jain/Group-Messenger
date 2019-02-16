@@ -108,6 +108,7 @@ public class GroupMessengerActivity extends Activity {
                 textView.append(message);
             }
         }
+
         public void run() {
 
             //Open a socket
