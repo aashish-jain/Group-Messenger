@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
+import java.util.logging.Logger;
 
 /**
  * GroupMessengerProvider is a key-value table. Once again, please note that we do not implement
@@ -41,11 +42,17 @@ import java.util.HashMap;
  *
  */
 
+
 public class GroupMessengerProvider extends ContentProvider {
 
     //https://stackoverflow.com/questions/36652944/how-do-i-read-in-binary-data-files-in-java
     static final String fileName = "database.db";
     static String[] columns = {"key", "value"};
+
+    //https://developer.android.com/training/data-storage/sqlite
+    KeyValueStorageDBHelper dbHelper;
+    SQLiteDatabase dbWriter, dbReader;
+
 
     //For caching
     static HashMap<String, String> keyValueStorage = new HashMap<String, String>();
@@ -64,53 +71,17 @@ public class GroupMessengerProvider extends ContentProvider {
 
     @Override
     public Uri insert(Uri uri, ContentValues values) {
-
-        // Open OutputStream and write to the file fo all values
-        FileOutputStream fileOutputStream = null;
-
-        try {
-            //https://docs.oracle.com/javase/7/docs/api/java/io/FileOutputStream.html
-            //https://stackoverflow.com/questions/4015773/the-method-openfileoutput-is-undefined
-            fileOutputStream = getContext().openFileOutput(fileName, Context.MODE_PRIVATE | Context.MODE_APPEND);
-            String key = (String) values.get("key"), value = (String) values.get("value");
-            String toWrite = key + " " + value + "\n";
-            fileOutputStream.write(toWrite.getBytes());
-
-            //Add it to the dictionary for faster access
-            //TODO: What if key is already present?
-            keyValueStorage.put(key, value);
-            Log.v("insert", key+" "+value);
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if(fileOutputStream != null)
-                    fileOutputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
+        //Update if column is already present
+        Log.d("INSERT", values.toString());
+        long newRowId = dbWriter.insertWithOnConflict(KeyValueStorageContract.KeyValueEntry.TABLE_NAME, null, values, SQLiteDatabase.CONFLICT_REPLACE);
         return uri;
     }
 
     @Override
     public boolean onCreate() {
-        // If you need to perform any one-time initialization task, please do it here.
-        File databaseFile;
-        databaseFile = new File(fileName);
-        // If the file exists delete it as the app resets the database file every time its re-run for assignment
-        if (databaseFile.exists()) {
-            databaseFile.delete();
-            try {
-                databaseFile.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        dbHelper = new KeyValueStorageDBHelper(getContext());
+        dbWriter = dbHelper.getWritableDatabase();
+        dbReader = dbHelper.getReadableDatabase();
         return true;
     }
 
@@ -135,56 +106,17 @@ public class GroupMessengerProvider extends ContentProvider {
          * http://developer.android.com/reference/android/database/MatrixCursor.html
          */
 
-        String requiredValue = null;
+        Log.d("QUERY", selection);
 
-        Log.d("QUERY", "Queried " + selection);
-        //Check if it is in the dicitionary. If yes then return
-        if(keyValueStorage.containsKey(selection)){
-            requiredValue = keyValueStorage.get(selection);
-        }
-        else {
-            BufferedReader bufferedReader = null;
-            InputStreamReader inputStreamReader = null;
-            FileInputStream fileInputStream = null;
-            try {
-                //https://docs.oracle.com/javase/7/docs/api/java/io/BufferedReader.html
-                //https://stackoverflow.com/questions/5200187/convert-inputstream-to-bufferedreader
-                fileInputStream = getContext().openFileInput(fileName);
-                inputStreamReader = new InputStreamReader(fileInputStream);
-                bufferedReader = new BufferedReader(inputStreamReader);
-
-                String s = null;
-                //To handle large files too. TODO: Replace with DB for PA 2B.
-                while ((s = bufferedReader.readLine()) != null) {
-                    //https://stackoverflow.com/questions/3481828/how-to-split-a-string-in-java
-                    String[] values = s.split(" ");
-                    Log.d("Querying ", values[0] + " : " + values[1]);
-                    if (values[0].equals(selection)) {
-                        requiredValue = values[1];
-                        break;
-                    }
-                }
-
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    bufferedReader.close();
-                    inputStreamReader.close();
-                    fileInputStream.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        if(requiredValue==null)
-            Log.e("QUERY", "NOT FOUND "+selection);
-
-        MatrixCursor matrixCursor = new MatrixCursor(columns, 2);
-        matrixCursor.addRow(new Object[] {selection, requiredValue});
-        return matrixCursor;
+        //https://developer.android.com/training/data-storage/sqlite
+        return dbReader.query(
+                KeyValueStorageContract.KeyValueEntry.TABLE_NAME,   // The table to query
+                projection,             // The array of columns to return (pass null to get all)
+                selection,              // The columns for the WHERE clause
+                selectionArgs,          // The values for the WHERE clause
+                null,                   // don't group the rows
+                null,                   // don't filter by row groups
+                sortOrder               // The sort order
+        );
     }
 }
