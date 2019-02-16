@@ -64,19 +64,10 @@ public class GroupMessengerProvider extends ContentProvider {
 
     @Override
     public Uri insert(Uri uri, ContentValues values) {
-        /*
-         * TODO: You need to implement this method. Note that values will have two columns (a key
-         * column and a value column) and one row that contains the actual (key, value) pair to be
-         * inserted.
-         * 
-         * For actual storage, you can use any option. If you know how to use SQL, then you can use
-         * SQLite. But this is not a requirement. You can use other storage options, such as the
-         * internal storage option that we used in PA1. If you want to use that option, please
-         * take a look at the code for PA1.
-         */
 
         // Open OutputStream and write to the file fo all values
         FileOutputStream fileOutputStream = null;
+
         try {
             //https://docs.oracle.com/javase/7/docs/api/java/io/FileOutputStream.html
             //https://stackoverflow.com/questions/4015773/the-method-openfileoutput-is-undefined
